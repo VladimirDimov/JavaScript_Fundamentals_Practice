@@ -28,7 +28,7 @@ function solver(args){
 	var trainers = [];
 	var sortBy = args[0].split('^').map(function(item){return item.trim();});
 	var args = args.slice(1);
-
+	
 	// Fill all people in array "people"
 	args.forEach(function(item,index){
 		people.push(JSON.parse(item));
@@ -37,22 +37,12 @@ function solver(args){
 	// get all students and trainers
 	people.forEach(function(item, index){
 		if (item.role == 'student') {
-			var id = item.id,
-			firstname = item.firstname,
-			lastname = item.lastname,
-			averageGrade = avr(item.grades) + '',
-			certificate = item.certificate;
-
-			students.push({id: id, firstname: firstname, lastname: lastname, averageGrade: averageGrade, certificate: certificate});
+			students.push(item);
 		}else{
-			var id = item.id,
-			firstname = item.firstname,
-			lastname = item.lastname,
-			courses = item.courses;
-			lecturesPerDay = item.lecturesPerDay;
-			trainers.push({id: id, firstname: firstname, lastname:lastname, courses: courses, lecturesPerDay: lecturesPerDay});
+			trainers.push(item);
 		};
 	})
+
 	// sort students
 	var criteria = sortBy[0];
 	if (criteria == 'name') {
@@ -63,10 +53,21 @@ function solver(args){
 
 	// sort trainers
 	trainers = trainers.sort(sortTrainers);
-
-	console.log('{"students":' + JSON.stringify(students) + ',"trainers":' + JSON.stringify(trainers) + '}');
 	
+	var studentsPrint = [];
+	students.forEach(function (item, index){
+		studentsPrint.push({id: item.id, firstname: item.firstname, lastname: item.lastname, averageGrade: avr(item.grades), certificate: item.certificate});
+	})
+
+	var trainersPrint = [];
+	trainers.forEach(function (item, index){
+		trainersPrint.push({id: item.id, firstname: item.firstname, lastname: item.lastname, courses: item.courses, lecturesPerDay: item.lecturesPerDay});
+	});
+ 	
+	console.log('{"students":' + JSON.stringify(studentsPrint) + ',"trainers":' + JSON.stringify(trainersPrint) + '}');
+
 	debugger;
+
 	function avr(arr){
 		var sum = 0;
 		arr.forEach(function (item, index){
@@ -97,4 +98,5 @@ function solver(args){
 	}
 }
 
-solver(test2);
+// solver(test2);
+solver(['name^courses']);
