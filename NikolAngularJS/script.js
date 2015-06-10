@@ -51,34 +51,74 @@ var test1 = [
 '</html>'
 ];
 
-console.log(solution(test1));
-
 function solution(args){
-	var argsLen = args.length;
-	var numberOfConstants = parseInt(args[0]);
-	var constants = [];
-	var templates = [];
-	for (var i = 0; i < numberOfConstants; i++) {
-		var curline = args[i+1].split('-');
-		constants.push({name: curline[0].trim(' '), value: curline[1].trim(' ')});
-	};
-
-	CollectTemplates();
-
-	function CollectTemplates(){
-		for (var row = numberOfConstants + 1; row < argsLen; row++) {
-			var curRow = args[row];
-			if (args[curRow] = ) {};
-			if (curRow.indexOf('<nk-template name=') == 0) {
-				var newTemplate = {};
-				var startIndex = curRow.indexOf('"')+1,
-					endIndex = curRow.indexOf('"', startIndex);
-				newTemplate['name'] = curRow.substring(startIndex, endIndex);
-				var endRow = args.indexOf('</nk-template>', row);
-				newTemplate['value'] = args.slice(row + 1, endRow);
-				templates.push(newTemplate);
-				row = endRow;
-			};
+	function abc(input){
+		if (input.indexOf(';') == -1) {
+			return input;
+		}else{
+			return input.split(';').map(function(item){
+				return Number(item) || item;
+			});				
 		};
 	}
+	var nkmodels = {}; // Nk-models
+	var numOfnkModels = Number(args[0]);
+	for (var row = 1; row <= numOfnkModels; row++) {
+		var curline = args[row].split('-');
+		nkmodels[curline[0].trim()] = abc(curline[1].trim());		
+	}
+
+	args = args.slice(numOfnkModels+2);
+	args = args.join('\n'); // args are joined to on string
+
+	// Getting all templates;
+	var nkTemplates = {};
+	args = args.replace(/[ ]*<\s*nk-template\s+name\s*=\s*"\s*([^ ]+?)\s*"\s*>\n((.+\n)+?)<\/nk-template>[ ]*\n/g, function(matches, name, content){
+		nkTemplates[name] = content;
+		return '';
+	});
+
+	//conditionals
+	args = args.replace(/[ ]*<\s*nk-if\s+condition\s*=\s*"(.+?)"\s*>\s*\n((.+\n)+?)\s*<\/nk-if>[ ]*\n/g, function(matches, condition, content){
+		if (nkmodels[condition] == 'true') {
+			return content;
+		}else{
+			return '';
+		};
+	});
+
+	//replacing all nkModels
+	args = args.replace(/([^{]{2})<nk-model>(.+?)<\/nk-model>([^}]{2})/gm, function(matches, prep, name, post){
+		if (nkmodels[name]) {
+			return prep + nkmodels[name] + post;
+		}else{
+			return matches;
+		};
+		
+	});
+
+	//replacing all nktemplates
+	args = args.replace(/[ ]*<nk-template\s+render\s*=\s*"(.+?)"\s*\/>[ ]*\n/gm, 
+		function(matches, name){
+			return nkTemplates[name];
+		});
+
+	//replace all escaping brackets
+	args = args.replace('{{', '').replace('}}', '');
+
+	//Loops
+	args = args.replace(/<\s*nk-repeat\s+for\s*=\s*"\s*(\w+)\s+in\s+(\w+)\s*">\s*\n((.+\n)+?)\s*<\s*\/nk-repeat\s*>[ ]*\n/g, 
+		function(matches, item, inItems, content){
+			var result = [];
+			var templ = new RegExp('<\s*nk\-model\s*>' + item + '<\/nk-model>', 'g');
+			var items = nkmodels[inItems];
+			for(var i in items){
+				result.push(content.replace(templ, items[i]));
+			}
+			return result.join('');
+		});
+
+	console.log(args);
 };
+
+solution(test1);
